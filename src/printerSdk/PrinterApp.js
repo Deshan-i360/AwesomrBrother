@@ -24,6 +24,7 @@ const PrinterApp = () => {
     const [pdfPath, setPdfPath] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
+    // const imageurl = "https://images.unsplash.com/photo-1494871262121-49703fd34e2b?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
     // Request permissions for Android
     const requestPermissions = async () => {
         if (Platform.OS === 'android') {
@@ -52,20 +53,35 @@ const PrinterApp = () => {
     // Sample function to create a test image
     const createSampleImage = async () => {
         try {
-            // Get the bundled image URI
-            const imageAssetSource = Image.resolveAssetSource(Images.imageTwo);
             const destPath = `${RNFS.DocumentDirectoryPath}/imageTwo.png`;
 
-            // Copy from bundle to documents directory
-            await RNFS.copyFile(imageAssetSource.uri, destPath);
+            // Try different path variations based on common structures
+            const possiblePaths = [
+                'imageTwo.png',                    // If in root assets
+                'images/imageTwo.png',             // If in images folder
+                'assets/images/imageTwo.png',      // If in assets/images
+                'src/assets/images/imageTwo.png'   // Full path
+            ];
 
-            setImagePath(destPath);
-            console.log('Image copied to documents:', destPath);
+            for (const assetPath of possiblePaths) {
+                try {
+                    await RNFS.copyFileAssets(assetPath, destPath);
+                    setImagePath(destPath);
+                    console.log(`Image copied successfully using path: ${assetPath}`);
+                    return; // Success, exit function
+                } catch (pathError) {
+                    console.log(`Failed with path ${assetPath}:`, pathError.message);
+                }
+            }
+
+            throw new Error('All asset paths failed');
+
         } catch (error) {
             console.log('Error copying bundled image:', error);
             Alert.alert('Error', `Failed to copy image: ${error.message}`);
         }
     };
+
 
     const handlePrintImageWifi = async () => {
         if (!ipAddress || !imagePath) {
@@ -176,9 +192,9 @@ const PrinterApp = () => {
 
 
 
-    React.useEffect(async () => {
-        await requestPermissions();
-        await requestPermissionsForPrinter();
+    React.useEffect(() => {
+        // await requestPermissions();
+        requestPermissionsForPrinter();
     }, []);
 
     return (

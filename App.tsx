@@ -27,6 +27,8 @@ import BrotherQL820App from './brotherPrinter';
 import { CanvasLabel } from './canvas';
 import PrintLabel from './printerLabel';
 import PrinterApp from './src/printerSdk/PrinterApp';
+import PrinterModifyApp from './src/printerSdk/ModifyPrinter';
+import BrotherPrinterAppSeconOp from './src/seconPrintOp/printSec';
 
 function App(): React.JSX.Element {
 
@@ -44,8 +46,10 @@ function App(): React.JSX.Element {
     //   }
     //   }
     // />
-    // <PrintLabel/>
-    <PrinterApp/>
+    <PrintLabel/>
+    // <PrinterApp/>
+    // <PrinterModifyApp/>
+    // <BrotherPrinterAppSeconOp/>
   );
 }
 

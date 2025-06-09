@@ -335,6 +335,44 @@ class BrotherPrinterModule(reactContext: ReactApplicationContext) : ReactContext
 }
 
 
+// @ReactMethod
+// fun setLabelAutoCut(
+//     ipAddress: String,
+//     autoCut: Boolean,
+//     promise: Promise
+// ) {
+//     try {
+//         val channel = Channel.(ipAddress)
+//         val result = PrinterDriverGenerator.openChannel(channel)
+
+//         if (result.error.code != OpenChannelError.ErrorCode.NoError) {
+//             promise.reject("CHANNEL_ERROR", "Failed to open WiFi channel: ${result.error.code}")
+//             return
+//         }
+
+//         val printerDriver = result.driver
+
+//         // Set auto cut setting
+//         val printSettings = QLPrintSettings(PrinterModel.QL_820NWB)
+//         printSettings.isAutoCut = autoCut
+
+//         // Apply settings
+//         val setError = printerDriver.setPrintSettings(printSettings)
+
+//         if (setError.code != PrintError.ErrorCode.NoError) {
+//             promise.reject("SETTINGS_ERROR", "Failed to set label auto cut: ${setError.code}")
+//         } else {
+//             promise.resolve("Label auto cut setting updated successfully")
+//         }
+
+//         printerDriver.closeChannel()
+
+//     } catch (e: Exception) {
+//         promise.reject("EXCEPTION", e.message ?: "Unknown error occurred while setting label auto cut")
+//     }
+// }
+
+
 
 
 
