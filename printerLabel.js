@@ -32,7 +32,8 @@ const ArrowLeftIcon = () => <Text style={styles.arrowIcon}>←</Text>;
 function PrintLabel() {
   const [html, setHtml] = useState('');
   const [imageUri, setImageUri] = useState(null);
-  const [macAddress, setMacAddress] = useState('00:80:77:XX:XX:XX');
+  const [macAddress, setMacAddress] = useState('');
+  const [ipAddress, setIpAddress] = useState('');
   const [imagePath, setImagePath] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPdf, setIsPdf] = useState(null);
@@ -218,6 +219,36 @@ function PrintLabel() {
     }
   };
 
+  const handlePrintImageWifi = async () => {
+    if (!ipAddress || !imageUri) {
+      Alert.alert('Error', 'Please enter MAC address and image path');
+      return;
+    }
+
+    // setIsLoading(true);
+    try {
+      // const imageAssetPath = Image.resolveAssetSource(require('../imageTwo.png')).uri;
+      // const destPath = `${RNFS.DocumentDirectoryPath}/imageTwo.png`;
+
+      // await RNFS.copyFileAssets(imageAssetPath, destPath);
+
+      const result = await BrotherPrinter.printImageWifi(
+        ipAddress,
+        imageUri,
+        PrinterModels.QL_820NWB,
+        LabelSizes.ROLLW29,
+      );
+      Alert.alert('Success', result);
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        error.message || 'Failed to print image via Bluetooth',
+      );
+    } finally {
+      // setIsLoading(false);
+    }
+  };
+
   const handlePrintPdf = async () => {
     if (!macAddress || !isPdf) {
       Alert.alert('Error', 'Please enter MAC address and PDF path');
@@ -240,11 +271,15 @@ function PrintLabel() {
     }
   };
 
-  const printViaNpm = async () => {
+  const printViaWifiPdf = async () => {
     try {
       // setIsGenerating(true);
       const modelName = 'QL-820NWB';
-      const res = await printImageViaBluetooth(imageUri, modelName);
+      const res = await BrotherPrinter.printPdfWifi(
+        ipAddress,
+        modelName,
+        isPdf,
+      );
       console.log(res, '--------npm res');
 
       Alert.alert('Success', 'Image sent to printer via npm package');
@@ -265,6 +300,14 @@ function PrintLabel() {
           value={macAddress}
           onChangeText={handleMacAddressChange}
         />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Printer IP Address (e.g., 192.168.1.100)"
+          value={ipAddress}
+          onChangeText={setIpAddress}
+        />
+
         {/* <View style={styles.header}>
                     <TouchableOpacity style={styles.backButton}>
                         <ArrowLeftIcon />
@@ -285,9 +328,10 @@ function PrintLabel() {
             <View>
               {/* Hidden WebView for capture */}
               <ViewShot
-                style={{height: 280, width: '100%'}}
+                style={{height: 300, width: '100%'}}
                 ref={viewShotRef}
-                options={{format: 'jpg', quality: 0.9}}>
+                options={{format: 'jpg', quality: 1}}
+                >
                 <WebView
                   source={{html}}
                   style={styles.webview}
@@ -351,21 +395,35 @@ function PrintLabel() {
           </TouchableOpacity>
         )}
 
-        {/* {imageUri && (
+        {imageUri && (
           <TouchableOpacity
             style={[styles.printButton, isGenerating && styles.disabledButton]}
-            onPress={printViaNpm}
+            onPress={handlePrintImageWifi}
             // disabled={isGenerating}
           >
             {isGenerating ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={styles.buttonText}>Print via npm</Text>
+              <Text style={styles.buttonText}>Print via wifi image</Text>
             )}
           </TouchableOpacity>
-        )} */}
+        )}
 
-        {/* {isPdf && (
+        {imageUri && (
+          <TouchableOpacity
+            style={[styles.printButton, isGenerating && styles.disabledButton]}
+            onPress={printViaWifiPdf}
+            // disabled={isGenerating}
+          >
+            {isGenerating ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Print via wifi pdf</Text>
+            )}
+          </TouchableOpacity>
+        )}
+
+        {isPdf && (
           <TouchableOpacity
             style={[styles.printButton, isGenerating && styles.disabledButton]}
             onPress={handlePrintPdf}
@@ -377,7 +435,7 @@ function PrintLabel() {
               <Text style={styles.buttonText}>Print Pdf</Text>
             )}
           </TouchableOpacity>
-        )} */}
+        )}
       </View>
     </ScrollView>
   );

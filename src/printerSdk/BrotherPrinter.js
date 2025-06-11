@@ -64,7 +64,7 @@ class BrotherPrinterManager {
    * @param {string} filePath - Full path to the PDF file
    * @returns {Promise<string>} - Success message or error
    */
-  async printPdf(ipAddress, modelName, filePath) {
+  async printPdfWifi(ipAddress, modelName, filePath) {
     try {
       const result = await BrotherPrinter.printPdf(ipAddress, modelName, filePath);
       return result;
@@ -112,9 +112,6 @@ class BrotherPrinterManager {
       throw error;
     }
   }
-
-
-
 
 
 }
