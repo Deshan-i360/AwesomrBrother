@@ -93,7 +93,7 @@ class BrotherPrinterModule(reactContext: ReactApplicationContext) : ReactContext
         promise: Promise
     ) {
         try {
-            val bluetoothManager = reactApplicationContext.getSystemService(Context.BLUETOOTH_SERVICE)as BluetoothManager
+            val bluetoothManager = reactApplicationContext.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
             val bluetoothAdapter = bluetoothManager.adapter
             if (bluetoothAdapter == null) {
                 promise.reject("BLUETOOTH_ERROR", "Bluetooth not supported on this device")
@@ -117,23 +117,27 @@ class BrotherPrinterModule(reactContext: ReactApplicationContext) : ReactContext
             Log.d(TAG, "Success - Open Bluetooth Channel")
             val printerDriver = result.driver
 
-            // Check if file exists
-            val file = File(imagePath)
-            if (!file.exists()) {
+            // Get the correct file path
+            val actualFilePath = getValidFilePath(imagePath)
+            if (actualFilePath == null) {
                 printerDriver.closeChannel()
                 promise.reject("FILE_ERROR", "Image file not found at path: $imagePath")
                 return
             }
 
             // Setup print settings
-            val model = getPrinterModel(printerModel)
+//            val model = getPrinterModel(printerModel)
+            val model = PrinterModel.QL_820NWB
             val printSettings = QLPrintSettings(model)
-            printSettings.labelSize = getLabelSize(labelSize)
+            printSettings.labelSize = QLPrintSettings.LabelSize.RollW62
             printSettings.isAutoCut = true
             printSettings.workPath = reactApplicationContext.getExternalFilesDir(null)?.toString()
 
+//            printSettings.isCutAtEnd = true
+
+
             // Print the image
-            val printError = printerDriver.printImage(imagePath, printSettings)
+            val printError = printerDriver.printImage(actualFilePath, printSettings)
 
             if (printError.code != PrintError.ErrorCode.NoError) {
                 Log.e(TAG, "Error - Print Image via Bluetooth: ${printError.code}")
@@ -148,6 +152,45 @@ class BrotherPrinterModule(reactContext: ReactApplicationContext) : ReactContext
         } catch (e: Exception) {
             Log.e(TAG, "Exception in printImageBluetooth", e)
             promise.reject("EXCEPTION", e.message ?: "Unknown error occurred")
+        }
+    }
+
+    private fun getValidFilePath(imagePath: String): String? {
+        // First, try the original path (removing file:// prefix if present)
+        val cleanPath = if (imagePath.startsWith("file://")) {
+            imagePath.substring(7)
+        } else {
+            imagePath
+        }
+        
+        val file = File(cleanPath)
+        if (file.exists()) {
+            return cleanPath
+        }
+        
+        // If original doesn't exist, try to copy to accessible location
+        return copyFileToAccessibleLocation(imagePath)
+    }
+
+    private fun copyFileToAccessibleLocation(originalPath: String): String? {
+        try {
+            val cleanPath = if (originalPath.startsWith("file://")) {
+                originalPath.substring(7)
+            } else {
+                originalPath
+            }
+            
+            val sourceFile = File(cleanPath)
+            if (!sourceFile.exists()) return null
+            
+            val destDir = reactApplicationContext.getExternalFilesDir(null)
+            val destFile = File(destDir, "temp_print_${System.currentTimeMillis()}.jpg")
+            
+            sourceFile.copyTo(destFile, overwrite = true)
+            return destFile.absolutePath
+        } catch (e: Exception) {
+            Log.e(TAG, "Error copying file", e)
+            return null
         }
     }
 

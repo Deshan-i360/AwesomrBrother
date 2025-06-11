@@ -351,7 +351,7 @@ function PrintLabel() {
           </TouchableOpacity>
         )}
 
-        {imageUri && (
+        {/* {imageUri && (
           <TouchableOpacity
             style={[styles.printButton, isGenerating && styles.disabledButton]}
             onPress={printViaNpm}
@@ -363,9 +363,9 @@ function PrintLabel() {
               <Text style={styles.buttonText}>Print via npm</Text>
             )}
           </TouchableOpacity>
-        )}
+        )} */}
 
-        {isPdf && (
+        {/* {isPdf && (
           <TouchableOpacity
             style={[styles.printButton, isGenerating && styles.disabledButton]}
             onPress={handlePrintPdf}
@@ -377,7 +377,7 @@ function PrintLabel() {
               <Text style={styles.buttonText}>Print Pdf</Text>
             )}
           </TouchableOpacity>
-        )}
+        )} */}
       </View>
     </ScrollView>
   );
