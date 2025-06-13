@@ -32,7 +32,7 @@ const ArrowLeftIcon = () => <Text style={styles.arrowIcon}>←</Text>;
 function PrintLabel() {
   const [html, setHtml] = useState('');
   const [imageUri, setImageUri] = useState(null);
-  const [macAddress, setMacAddress] = useState('');
+  const [macAddress, setMacAddress] = useState('6C:B2:FD:94:22:2F');
   const [ipAddress, setIpAddress] = useState('');
   const [imagePath, setImagePath] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -53,65 +53,108 @@ function PrintLabel() {
       //   const storedData = await AsyncStorage.getItem('label-configurations');
       //   const parsedData = storedData ? JSON.parse(storedData) : {};
       const parsedData = `<!DOCTYPE html>
-                    <html>
-                    <head>
-                    <style>
-                        body {
-                        font-family: Arial, sans-serif;
-                        width: {{width}}px;
-                        height: {{height}}px;
-                        padding: 10px;
-                        box-sizing: border-box;
-                        border: 1px solid #000;
-                        }
-                        .label {
-                        display: flex;
-                        flex-direction: column;
-                        justify-content: center;
-                        align-items: flex-start;
-                        height: 100%;
-                        }
-                        .field {
-                        margin-bottom: 8px;
-                        font-size: 16px;
-                        }
-                        .field span {
-                        font-weight: bold;
-                        }
-                        img {
-                        margin-top: 4px;
-                        }
-                    </style>
-                    </head>
-                    <body>
-                    <div class="label">
-                        <div class="field"><span>Serial:</span> {{serial}}</div>
-                        <div class="field"><span>IP Address:</span> {{ip}}</div>
-                        <div class="field"><span>Batch Code:</span> {{batchCode}}</div>
-                        <div class="field">
-                        <span>QR Code:</span><br />
-                        <img src="{{qrCode}}" alt="QR Code" width="100" height="100" />
-                        </div>
-                    </div>
-                    </body>
-                    </html>`;
+        <html>
+        <head>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              width: {{width}}px;
+              height: {{height}}px;
+              margin: 0;
+              margin-top: 30px;
+              padding: 8px;
+              box-sizing: border-box;
+              border: 1px solid #000;
+              background-color: white;
+            }
+            .label {
+              display: flex;
+              flex-direction: row;
+              margin-top: 0px;
+              margin-left:30px;
+              height: 100%;
+              width: 100%;
+              align-items: center;
+            }
+            .qr {
+              flex: 0 0 auto;
+              width: 35%; /* Adjust QR size to fit better */
+              height: 100%;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              padding: 8px;
+            }
+            .qr img {
+              width: 100%;
+              height: 100%;
+              max-width: 100%;
+              max-height: 100%;
+              object-fit: contain;
+            }
+            .info {
+              flex: 1;
+              display: flex;
+              flex-direction: column;
+              justify-content: space-around;
+              padding: 5px 8px;
+              height: 100%;
+              overflow: hidden;
+            }
+            .field {
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              font-size: 54px; /* Smaller font for better fit */
+              line-height: 1.1;
+              margin-bottom: 2px;
+            }
+            .field span {
+              font-weight: bold;
+              margin-right: 4px;
+            }
+            .field-value {
+              font-weight: normal;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="label">
+            <div class="qr">
+              <img src="{{qrCode}}" alt="QR Code" />
+            </div>
+            <div class="info">
+              <div class="field"><span>Org:</span><span class="field-value">{{organization}}</span></div>
+              <div class="field"><span>Site:</span><span class="field-value">{{site}}</span></div>
+              <div class="field"><span>Visitor:</span><span class="field-value">{{visitor}}</span></div>
+              <div class="field"><span>Date:</span><span class="field-value">{{date}}</span></div>
+            </div>
+          </div>
+        </body>
+        </html>
+`;
 
       if (parsedData && Object.keys(parsedData).length > 0) {
         const qrCodeData = await generateQRCodeDataUrlRN(
-          '1234567890|192.168.1.100|ABC-123',
+          '8e371b42dd8ddb276f23cdf09c1098cd95919fa0621fcdad2ecb66460a664889',
         );
 
         console.log(qrCodeData, '--qr');
 
         const templateFunction = Handlebars.compile(parsedData);
         const generatedHtml = templateFunction({
+          organization: 'Long Organization Name',
+          site: 'Site XYZ',
+          visitor: 'John Doe',
+          date: new Date().toLocaleDateString(),
           serial: '1234567890',
           ip: '192.168.1.100',
           batchCode: 'ABC-123',
-          height: 250,
-          width: 300,
           qrCode: qrCodeData,
+          width: 1462, // 90mm at 300 DPI
+          height: 442, // 29mm at 300 DPI
         });
+
         const pdf = await generatePDFFromHTML(generatedHtml);
         console.log('PDF path:', pdf.filePath);
         setIsPdf(pdf.filePath);
@@ -206,7 +249,7 @@ function PrintLabel() {
         macAddress,
         imageUri,
         PrinterModels.QL_820NWB,
-        LabelSizes.ROLLW29,
+        LabelSizes.DieCutW29H90,
       );
       Alert.alert('Success', result);
     } catch (error) {
@@ -236,7 +279,7 @@ function PrintLabel() {
         ipAddress,
         imageUri,
         PrinterModels.QL_820NWB,
-        LabelSizes.ROLLW29,
+        LabelSizes.DieCutW29H90,
       );
       Alert.alert('Success', result);
     } catch (error) {
@@ -260,6 +303,7 @@ function PrintLabel() {
       const result = await BrotherPrinter.printPdfBluetooth(
         macAddress,
         PrinterModels.QL_820NWB,
+        LabelSizes.DieCutW29H90,
         isPdf,
       );
       Alert.alert('Success', result);
@@ -330,8 +374,7 @@ function PrintLabel() {
               <ViewShot
                 style={{height: 300, width: '100%'}}
                 ref={viewShotRef}
-                options={{format: 'jpg', quality: 1}}
-                >
+                options={{format: 'jpg', quality: 1}}>
                 <WebView
                   source={{html}}
                   style={styles.webview}
@@ -381,7 +424,7 @@ function PrintLabel() {
           )}
         </View>
 
-        {imageUri && (
+        {/* {imageUri && (
           <TouchableOpacity
             style={[styles.printButton, isGenerating && styles.disabledButton]}
             onPress={handlePrintLabel}
@@ -393,9 +436,9 @@ function PrintLabel() {
               <Text style={styles.buttonText}>Print Image</Text>
             )}
           </TouchableOpacity>
-        )}
+        )} */}
 
-        {imageUri && (
+        {/* {imageUri && (
           <TouchableOpacity
             style={[styles.printButton, isGenerating && styles.disabledButton]}
             onPress={handlePrintImageWifi}
@@ -407,9 +450,9 @@ function PrintLabel() {
               <Text style={styles.buttonText}>Print via wifi image</Text>
             )}
           </TouchableOpacity>
-        )}
+        )} */}
 
-        {imageUri && (
+        {/* {imageUri && (
           <TouchableOpacity
             style={[styles.printButton, isGenerating && styles.disabledButton]}
             onPress={printViaWifiPdf}
@@ -421,7 +464,7 @@ function PrintLabel() {
               <Text style={styles.buttonText}>Print via wifi pdf</Text>
             )}
           </TouchableOpacity>
-        )}
+        )} */}
 
         {isPdf && (
           <TouchableOpacity

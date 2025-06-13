@@ -1,43 +1,63 @@
-import { NativeModules } from 'react-native';
+import {NativeModules} from 'react-native';
 
-const { BrotherPrinter } = NativeModules;
+const {BrotherPrinter} = NativeModules;
 
 // Printer Models
 export const PrinterModels = {
   QL_820NWB: 'QL_820NWB',
   QL_810W: 'QL_810W',
   QL_800: 'QL_800',
-  QL_700: 'QL_700',
 };
 
 // Label Sizes
 export const LabelSizes = {
-  ROLLW12: 'ROLLW12',  // 12mm
-  ROLLW29: 'ROLLW29',  // 29mm
-  ROLLW38: 'ROLLW38',  // 38mm
-  ROLLW50: 'ROLLW50',  // 50mm
-  ROLLW54: 'ROLLW54',  // 54mm
-  ROLLW62: 'ROLLW62',  // 62mm
+  DieCutW17H54: 'DieCutW17H54',
+  DieCutW17H87: 'DieCutW17H87',
+  DieCutW23H23: 'DieCutW23H23',
+  DieCutW29H42: 'DieCutW29H42',
+  DieCutW29H90: 'DieCutW29H90',
+  DieCutW38H90: 'DieCutW38H90',
+  DieCutW39H48: 'DieCutW39H48',
+  DieCutW52H29: 'DieCutW52H29',
+  DieCutW62H29: 'DieCutW62H29',
+  DieCutW62H60: 'DieCutW62H60',
+  DieCutW62H75: 'DieCutW62H75',
+  DieCutW62H100: 'DieCutW62H100',
+  DieCutW60H86: 'DieCutW60H86',
+  DieCutW54H29: 'DieCutW54H29',
+  DieCutW102H51: 'DieCutW102H51',
+  DieCutW102H152: 'DieCutW102H152',
+  DieCutW103H164: 'DieCutW103H164',
 };
 
 class BrotherPrinterManager {
-  /**
-   * Print an image via WiFi
-   * @param {string} ipAddress - IP address of the printer
-   * @param {string} imagePath - Full path to the image file
-   * @param {string} printerModel - Printer model (use PrinterModels constants)
-   * @param {string} labelSize - Label size (use LabelSizes constants)
-   * @returns {Promise<string>} - Success message or error
-   */
-  async printImageWifi(ipAddress, imagePath, printerModel = PrinterModels.QL_820NWB, labelSize = LabelSizes.ROLLW29) {
-    try {
-      const result = await BrotherPrinter.printImageWifi(ipAddress, imagePath, printerModel, labelSize);
-      return result;
-    } catch (error) {
-      console.error('BrotherPrinter WiFi Error:', error);
-      throw error;
-    }
-  }
+  // /**
+  //  * Print an image via WiFi
+  //  * @param {string} ipAddress - IP address of the printer
+  //  * @param {string} imagePath - Full path to the image file
+  //  * @param {string} printerModel - Printer model (use PrinterModels constants)
+  //  * @param {string} labelSize - Label size (use LabelSizes constants)
+  //  * @returns {Promise<string>} - Success message or error
+  //  */
+  // async printImageWifi(
+  //   ipAddress,
+  //   imagePath,
+  //   printerModel = PrinterModels.QL_820NWB,
+  //   labelSize = LabelSizes.ROLLW29,
+  // ) {
+  //   try {
+  //     const result = await BrotherPrinter.printImageWifi(
+  //       ipAddress,
+  //       imagePath,
+  //       printerModel,
+  //       labelSize,
+  //     );
+  //     return result;
+  //   } catch (error) {
+  //     console.error('BrotherPrinter WiFi Error:', error);
+  //     throw error;
+  //   }
+  // }
 
   /**
    * Print an image via Bluetooth
@@ -47,9 +67,19 @@ class BrotherPrinterManager {
    * @param {string} labelSize - Label size (use LabelSizes constants)
    * @returns {Promise<string>} - Success message or error
    */
-  async printImageBluetooth(macAddress, imagePath, printerModel = PrinterModels.QL_820NWB, labelSize = LabelSizes.ROLLW29) {
+  async printImageBluetooth(
+    macAddress,
+    imagePath,
+    printerModel = PrinterModels.QL_820NWB,
+    labelSize = LabelSizes.ROLLW29,
+  ) {
     try {
-      const result = await BrotherPrinter.printImageBluetooth(macAddress, imagePath, printerModel, labelSize);
+      const result = await BrotherPrinter.printImageBluetooth(
+        macAddress,
+        imagePath,
+        printerModel,
+        labelSize,
+      );
       return result;
     } catch (error) {
       console.error('BrotherPrinter Bluetooth Error:', error);
@@ -57,22 +87,26 @@ class BrotherPrinterManager {
     }
   }
 
-  /**
-   * Print a PDF file
-   * @param {string} ipAddress - IP address of the printer
-   * @param {string} modelName - Printer model name
-   * @param {string} filePath - Full path to the PDF file
-   * @returns {Promise<string>} - Success message or error
-   */
-  async printPdfWifi(ipAddress, modelName, filePath) {
-    try {
-      const result = await BrotherPrinter.printPdf(ipAddress, modelName, filePath);
-      return result;
-    } catch (error) {
-      console.error('BrotherPrinter PDF Error:', error);
-      throw error;
-    }
-  }
+  // /**
+  //  * Print a PDF file
+  //  * @param {string} ipAddress - IP address of the printer
+  //  * @param {string} modelName - Printer model name
+  //  * @param {string} filePath - Full path to the PDF file
+  //  * @returns {Promise<string>} - Success message or error
+  //  */
+  // async printPdfWifi(ipAddress, modelName, filePath) {
+  //   try {
+  //     const result = await BrotherPrinter.printPdf(
+  //       ipAddress,
+  //       modelName,
+  //       filePath,
+  //     );
+  //     return result;
+  //   } catch (error) {
+  //     console.error('BrotherPrinter PDF Error:', error);
+  //     throw error;
+  //   }
+  // }
 
   /**
    * Check printer status
@@ -103,17 +137,20 @@ class BrotherPrinterManager {
     }
   }
 
-  async printPdfBluetooth(macAddress, modelName, filePath) {
+  async printPdfBluetooth(macAddress, modelName, labelSize, filePath) {
     try {
-      const result = await BrotherPrinter.printPdfBluetooth(macAddress, modelName, filePath);
+      const result = await BrotherPrinter.printPdfBluetoothV2(
+        macAddress,
+        modelName,
+        labelSize,
+        filePath,
+      );
       return result;
     } catch (error) {
       console.error('BrotherPrinter Bluetooth PDF Error:', error);
       throw error;
     }
   }
-
-
 }
 
 export default new BrotherPrinterManager();

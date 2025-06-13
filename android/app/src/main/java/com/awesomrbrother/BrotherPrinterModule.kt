@@ -31,69 +31,69 @@ class BrotherPrinterModule(reactContext: ReactApplicationContext) : ReactContext
         return "BrotherPrinter"
     }
 
-    @ReactMethod
-    fun printImageWifi(
-        ipAddress: String,
-        imagePath: String,
-        printerModel: String,
-        labelSize: String,
-        promise: Promise
-    ) {
-        try {
-            val channel = Channel.newWifiChannel(ipAddress)
-            val result = PrinterDriverGenerator.openChannel(channel)
+//     @ReactMethod
+//     fun printImageWifi(
+//         ipAddress: String,
+//         imagePath: String,
+//         printerModel: String,
+//         labelSize: String,
+//         promise: Promise
+//     ) {
+//         try {
+//             val channel = Channel.newWifiChannel(ipAddress)
+//             val result = PrinterDriverGenerator.openChannel(channel)
 
-            if (result.error.code != OpenChannelError.ErrorCode.NoError) {
-                Log.e(TAG, "Error - Open Channel: ${result.error.code}")
-                promise.reject("CHANNEL_ERROR", "Failed to open WiFi channel: ${result.error.code}")
-                return
-            }
+//             if (result.error.code != OpenChannelError.ErrorCode.NoError) {
+//                 Log.e(TAG, "Error - Open Channel: ${result.error.code}")
+//                 promise.reject("CHANNEL_ERROR", "Failed to open WiFi channel: ${result.error.code}")
+//                 return
+//             }
 
-            Log.d(TAG, "Success - Open Channel")
-            val printerDriver = result.driver
+//             Log.d(TAG, "Success - Open Channel")
+//             val printerDriver = result.driver
 
-            // Check if file exists
-//            val file = File(imagePath)
-//            if (!file.exists()) {
-//                printerDriver.closeChannel()
-//                promise.reject("FILE_ERROR", "Image file not found at path: $imagePath")
-//                return
-//            }
+//             // Check if file exists
+// //            val file = File(imagePath)
+// //            if (!file.exists()) {
+// //                printerDriver.closeChannel()
+// //                promise.reject("FILE_ERROR", "Image file not found at path: $imagePath")
+// //                return
+// //            }
 
-            val actualFilePath = getValidFilePath(imagePath)
-            if (actualFilePath == null) {
-                printerDriver.closeChannel()
-                promise.reject("FILE_ERROR", "Image file not found at path: $imagePath")
-                return
-            }
+//             val actualFilePath = getValidFilePath(imagePath)
+//             if (actualFilePath == null) {
+//                 printerDriver.closeChannel()
+//                 promise.reject("FILE_ERROR", "Image file not found at path: $imagePath")
+//                 return
+//             }
 
 
 
-            // Setup print settings
-            val model = getPrinterModel(printerModel)
-            val printSettings = QLPrintSettings(model)
-            printSettings.labelSize = getLabelSize(labelSize)
-            printSettings.isAutoCut = true
-            printSettings.workPath = reactApplicationContext.getExternalFilesDir(null)?.toString()
+//             // Setup print settings
+//             val model = getPrinterModel(printerModel)
+//             val printSettings = QLPrintSettings(model)
+//             printSettings.labelSize = getLabelSize(labelSize)
+//             printSettings.isAutoCut = true
+//             printSettings.workPath = reactApplicationContext.getExternalFilesDir(null)?.toString()
 
-            // Print the image
-            val printError = printerDriver.printImage(actualFilePath, printSettings)
+//             // Print the image
+//             val printError = printerDriver.printImage(actualFilePath, printSettings)
 
-            if (printError.code != PrintError.ErrorCode.NoError) {
-                Log.e(TAG, "Error - Print Image: ${printError.code}")
-                promise.reject("PRINT_ERROR", "Failed to print image: ${printError.code}")
-            } else {
-                Log.d(TAG, "Success - Print Image")
-                promise.resolve("Image printed successfully")
-            }
+//             if (printError.code != PrintError.ErrorCode.NoError) {
+//                 Log.e(TAG, "Error - Print Image: ${printError.code}")
+//                 promise.reject("PRINT_ERROR", "Failed to print image: ${printError.code}")
+//             } else {
+//                 Log.d(TAG, "Success - Print Image")
+//                 promise.resolve("Image printed successfully")
+//             }
 
-            printerDriver.closeChannel()
+//             printerDriver.closeChannel()
 
-        } catch (e: Exception) {
-            Log.e(TAG, "Exception in printImageWifi", e)
-            promise.reject("EXCEPTION", e.message ?: "Unknown error occurred")
-        }
-    }
+//         } catch (e: Exception) {
+//             Log.e(TAG, "Exception in printImageWifi", e)
+//             promise.reject("EXCEPTION", e.message ?: "Unknown error occurred")
+//         }
+//     }
 
     @ReactMethod
     fun printImageBluetooth(
@@ -146,7 +146,10 @@ class BrotherPrinterModule(reactContext: ReactApplicationContext) : ReactContext
             printSettings.workPath = reactApplicationContext.getExternalFilesDir(null)?.toString()
 
 //            printSettings.isCutAtEnd = true
-
+            printSettings.printOrientation = PrintImageSettings.Orientation.Landscape
+            printSettings.halftone = PrintImageSettings.Halftone.Threshold
+//            printSettings.hAlignment = PrintImageSettings.HAlignment.Center
+//            printSettings.vAlignment = PrintImageSettings.VAlignment.Middle
 
             // Print the image
             val printError = printerDriver.printImage(actualFilePath, printSettings)
@@ -248,10 +251,100 @@ class BrotherPrinterModule(reactContext: ReactApplicationContext) : ReactContext
         return validPath
     }
 
+//    @ReactMethod
+//    fun printPdfBluetooth(
+//        macAddress: String,
+//        modelName: String,
+//        filePath: String,
+//        promise: Promise
+//    ) {
+//        try {
+//            val bluetoothManager = reactApplicationContext.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+//            val bluetoothAdapter = bluetoothManager.adapter
+//            if (bluetoothAdapter == null) {
+//                promise.reject("BLUETOOTH_ERROR", "Bluetooth not supported on this device")
+//                return
+//            }
+//
+//            if (!bluetoothAdapter.isEnabled) {
+//                promise.reject("BLUETOOTH_ERROR", "Bluetooth is not enabled")
+//                return
+//            }
+//
+//            // Use the legacy Printer class for PDF printing via Bluetooth
+//            val printer = Printer()
+//            val printerInfo = PrinterInfo()
+//
+//            // Set printer model
+//            try {
+//                printerInfo.printerModel = PrinterInfo.Model.QL_820NWB
+//            } catch (e: IllegalArgumentException) {
+//                promise.reject("MODEL_ERROR", "Invalid printer model: $modelName")
+//                return
+//            }
+//
+//            // Set Bluetooth connection
+//            printerInfo.macAddress = macAddress
+//            printerInfo.port = PrinterInfo.Port.BLUETOOTH
+//
+//            // CRITICAL: Set paper type for PDF printing
+//            // For QL-820NWB, use continuous length paper for PDFs
+//            printerInfo.paperSize = PrinterInfo.PaperSize.CUSTOM
+//            // Or try these alternatives:
+//            // printerInfo.paperSize = PrinterInfo.PaperSize.ROLL_W62
+//            // printerInfo.paperSize = PrinterInfo.PaperSize.ROLL_W29
+//
+//            // Set print quality and other settings for PDF
+//            printerInfo.printMode = PrinterInfo.PrintMode.ORIGINAL
+//            printerInfo.orientation = PrinterInfo.Orientation.PORTRAIT
+//
+//            printer.printerInfo = printerInfo
+//
+//            // Get the correct file path
+//            val actualFilePath = getValidFilePath(filePath)
+//            if (actualFilePath == null) {
+//                promise.reject("FILE_ERROR", "PDF file not found at path: $filePath")
+//                return
+//            }
+//
+//            // Verify it's actually a PDF file
+//            if (!actualFilePath.lowercase().endsWith(".pdf")) {
+//                promise.reject("FILE_ERROR", "File is not a PDF: $actualFilePath")
+//                return
+//            }
+//
+//            // Start communication
+//            if (!printer.startCommunication()) {
+//                promise.reject("CONNECTION_ERROR", "Could not connect to printer via Bluetooth")
+//                return
+//            }
+//
+//            // Print the PDF with proper settings
+//            val printSettings = PrintSettings()
+//            printSettings.copies = 1
+//            printSettings.halftone = PrintSettings.Halftone.THRESHOLD
+//
+//            val result = printer.printPdfFile(actualFilePath, printSettings)
+//            printer.endCommunication()
+//
+//            if (result.errorCode == PrinterInfo.ErrorCode.ERROR_NONE) {
+//                promise.resolve("PDF printed successfully via Bluetooth")
+//            } else {
+//                promise.reject("PRINT_ERROR", "PDF printing failed: ${result.errorCode}")
+//            }
+//
+//        } catch (e: Exception) {
+//            Log.e(TAG, "Exception in printPdfBluetooth", e)
+//            promise.reject("EXCEPTION", e.message ?: "Unknown error occurred")
+//        }
+//    }
+
+    // Alternative method using newer Brother SDK approach
     @ReactMethod
-    fun printPdfBluetooth(
+    fun printPdfBluetoothV2(
         macAddress: String,
-        modelName: String,
+        printerModel: String,
+        labelSize: String,
         filePath: String,
         promise: Promise
     ) {
@@ -268,116 +361,211 @@ class BrotherPrinterModule(reactContext: ReactApplicationContext) : ReactContext
                 return
             }
 
-            // Use the legacy Printer class for PDF printing via Bluetooth
-            val printer = Printer()
-            val printerInfo = PrinterInfo()
+            val channel = Channel.newBluetoothChannel(macAddress, bluetoothAdapter)
+            val result = PrinterDriverGenerator.openChannel(channel)
 
-            // Set printer model
-            try {
-                printerInfo.printerModel = PrinterInfo.Model.QL_820NWB
-            } catch (e: IllegalArgumentException) {
-                promise.reject("MODEL_ERROR", "Invalid printer model: $modelName")
+            if (result.error.code != OpenChannelError.ErrorCode.NoError) {
+                Log.e(TAG, "Error - Open Bluetooth Channel: ${result.error.code}")
+                promise.reject("CHANNEL_ERROR", "Failed to open Bluetooth channel: ${result.error.code}")
                 return
             }
 
-            // Set Bluetooth connection
-            printerInfo.macAddress = macAddress
-            printerInfo.port = PrinterInfo.Port.BLUETOOTH
-            printer.printerInfo = printerInfo
+            Log.d(TAG, "Success - Open Bluetooth Channel")
+            val printerDriver = result.driver
 
             // Get the correct file path
             val actualFilePath = getValidFilePath(filePath)
             if (actualFilePath == null) {
+                printerDriver.closeChannel()
                 promise.reject("FILE_ERROR", "PDF file not found at path: $filePath")
                 return
             }
 
-            // Verify it's actually a PDF file
-            if (!actualFilePath.lowercase().endsWith(".pdf")) {
-                promise.reject("FILE_ERROR", "File is not a PDF: $actualFilePath")
-                return
-            }
+            // Setup print settings for PDF (different from image settings)
+            val model = getPrinterModel(printerModel)
+            val printSettings = QLPrintSettings(model)
 
-            // Verify it's actually a PDF file
-            if (!actualFilePath.lowercase().endsWith(".pdf")) {
-                promise.reject("FILE_ERROR", "File is not a PDF: $actualFilePath")
-                return
-            }
+            // CRITICAL: Use different label size for PDF
+            // printSettings.labelSize = QLPrintSettings.LabelSize.DieCutW29H90 // Try continuous roll
+            printSettings.labelSize = getLabelSize(labelSize) // Try continuous roll
 
-            // Start communication
-            if (!printer.startCommunication()) {
-                promise.reject("CONNECTION_ERROR", "Could not connect to printer via Bluetooth")
-                return
-            }
+            // Or try these alternatives:
+            // printSettings.labelSize = QLPrintSettings.LabelSize.RollW29
+            // printSettings.labelSize = QLPrintSettings.LabelSize.DieCutW62H29
+
+            printSettings.isAutoCut = true
+            printSettings.workPath = reactApplicationContext.getExternalFilesDir(null)?.toString()
+
+            // PDF-specific settings
+            printSettings.scaleMode = PrintImageSettings.ScaleMode.FitPaperAspect
+
+
+            // Set orientation to landscape if available
+            printSettings.printOrientation =PrintImageSettings.Orientation.Landscape
+
+            // Ensure proper alignment
+//            printSettings.halftone = QLPrintSettings.Halftone.Threshold
+            printSettings.hAlignment = PrintImageSettings.HorizontalAlignment.Center
+//            printSettings.vAlignment = QLPrintSettings.VAlignment.Middle
+            // Or try: PrintImageSettings.ScaleMode.FitPaper
 
             // Print the PDF
-            val result = printer.printPdfFile(actualFilePath, 1)
-            printer.endCommunication()
+            val printError = printerDriver.printPDF(actualFilePath, printSettings)
 
-            if (result.errorCode == PrinterInfo.ErrorCode.ERROR_NONE) {
-                promise.resolve("PDF printed successfully via Bluetooth")
+            if (printError.code != PrintError.ErrorCode.NoError) {
+                Log.e(TAG, "Error - Print PDF via Bluetooth: ${printError.code}")
+                promise.reject("PRINT_ERROR", "Failed to print PDF via Bluetooth: ${printError.code}")
             } else {
-                promise.reject("PRINT_ERROR", "PDF printing failed: ${result.errorCode}")
+                Log.d(TAG, "Success - Print PDF via Bluetooth")
+                promise.resolve("PDF printed successfully via Bluetooth")
             }
 
+            printerDriver.closeChannel()
+
         } catch (e: Exception) {
-            Log.e(TAG, "Exception in printPdfBluetooth", e)
+            Log.e(TAG, "Exception in printPdfBluetoothV2", e)
             promise.reject("EXCEPTION", e.message ?: "Unknown error occurred")
         }
     }
 
-    @ReactMethod
-    fun printPdf(
-        ipAddress: String,
-        modelName: String,
-        filePath: String,
-        promise: Promise
-    ) {
-        try {
-            val printer = Printer()
-            val printerInfo = PrinterInfo()
+//     @ReactMethod
+//     fun printPdfBluetoothV2Array(
+//         macAddress: String,
+//         modelName: String,
+//         filePath: String,
+//         promise: Promise
+//     ) {
+//         try {
+//             val bluetoothManager = reactApplicationContext.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+//             val bluetoothAdapter = bluetoothManager.adapter
+//             if (bluetoothAdapter == null) {
+//                 promise.reject("BLUETOOTH_ERROR", "Bluetooth not supported on this device")
+//                 return
+//             }
 
-            // Set printer model
-            try {
-                printerInfo.printerModel = PrinterInfo.Model.QL_820NWB
-            } catch (e: IllegalArgumentException) {
-                promise.reject("MODEL_ERROR", "Invalid printer model: $modelName")
-                return
-            }
+//             if (!bluetoothAdapter.isEnabled) {
+//                 promise.reject("BLUETOOTH_ERROR", "Bluetooth is not enabled")
+//                 return
+//             }
 
-            // Set WiFi connection
-            printerInfo.ipAddress = ipAddress
-            printerInfo.port = PrinterInfo.Port.NET
-            printer.printerInfo = printerInfo
+//             val channel = Channel.newBluetoothChannel(macAddress, bluetoothAdapter)
+//             val result = PrinterDriverGenerator.openChannel(channel)
 
-            // Get the correct file path
-            val actualFilePath = getValidFilePath(filePath)
-            if (actualFilePath == null) {
-                promise.reject("FILE_ERROR", "PDF file not found at path: $filePath")
-                return
-            }
+//             if (result.error.code != OpenChannelError.ErrorCode.NoError) {
+//                 Log.e(TAG, "Error - Open Bluetooth Channel: ${result.error.code}")
+//                 promise.reject("CHANNEL_ERROR", "Failed to open Bluetooth channel: ${result.error.code}")
+//                 return
+//             }
 
-            // Start communication
-            if (!printer.startCommunication()) {
-                promise.reject("CONNECTION_ERROR", "Could not connect to printer at $ipAddress")
-                return
-            }
+//             Log.d(TAG, "Success - Open Bluetooth Channel")
+//             val printerDriver = result.driver
 
-            // Print the PDF
-            val result = printer.printPdfFile(actualFilePath, 1)
-            printer.endCommunication()
+//             // Get the correct file path
+//             val actualFilePath = getValidFilePath(filePath)
+//             if (actualFilePath == null) {
+//                 printerDriver.closeChannel()
+//                 promise.reject("FILE_ERROR", "PDF file not found at path: $filePath")
+//                 return
+//             }
 
-            if (result.errorCode == PrinterInfo.ErrorCode.ERROR_NONE) {
-                promise.resolve("PDF printed successfully")
-            } else {
-                promise.reject("PRINT_ERROR", "PDF printing failed: ${result.errorCode}")
-            }
+//             // Setup print settings for PDF (different from image settings)
+//             val model = PrinterModel.QL_820NWB
+//             val printSettings = QLPrintSettings(model)
 
-        } catch (e: Exception) {
-            Log.e(TAG, "Exception in printPdf", e)
-            promise.reject("EXCEPTION", e.message ?: "Unknown error occurred in PDF printing")
-        }
-    }
+//             // CRITICAL: Use different label size for PDF
+//             printSettings.labelSize = QLPrintSettings.LabelSize.DieCutW29H90 // Try continuous roll
+//             // Or try these alternatives:
+//             // printSettings.labelSize = QLPrintSettings.LabelSize.RollW29
+//             // printSettings.labelSize = QLPrintSettings.LabelSize.DieCutW62H29
+
+//             printSettings.isAutoCut = true
+//             printSettings.workPath = reactApplicationContext.getExternalFilesDir(null)?.toString()
+
+//             // PDF-specific settings
+//             printSettings.scaleMode = PrintImageSettings.ScaleMode.FitPaperAspect
+
+
+//             // Set orientation to landscape if available
+//             printSettings.printOrientation =PrintImageSettings.Orientation.Landscape
+
+//             // Ensure proper alignment
+// //            printSettings.halftone = QLPrintSettings.Halftone.Threshold
+//             printSettings.hAlignment = PrintImageSettings.HorizontalAlignment.Center
+// //            printSettings.vAlignment = QLPrintSettings.VAlignment.Middle
+//             // Or try: PrintImageSettings.ScaleMode.FitPaper
+
+//             // Print the PDF
+//             val printError = printerDriver.printImage(actualFilePath, printSettings)
+
+//             if (printError.code != PrintError.ErrorCode.NoError) {
+//                 Log.e(TAG, "Error - Print PDF via Bluetooth: ${printError.code}")
+//                 promise.reject("PRINT_ERROR", "Failed to print PDF via Bluetooth: ${printError.code}")
+//             } else {
+//                 Log.d(TAG, "Success - Print PDF via Bluetooth")
+//                 promise.resolve("PDF printed successfully via Bluetooth")
+//             }
+
+//             printerDriver.closeChannel()
+
+//         } catch (e: Exception) {
+//             Log.e(TAG, "Exception in printPdfBluetoothV2", e)
+//             promise.reject("EXCEPTION", e.message ?: "Unknown error occurred")
+//         }
+//     }
+
+
+    // @ReactMethod
+    // fun printPdf(
+    //     ipAddress: String,
+    //     modelName: String,
+    //     filePath: String,
+    //     promise: Promise
+    // ) {
+    //     try {
+    //         val printer = Printer()
+    //         val printerInfo = PrinterInfo()
+
+    //         // Set printer model
+    //         try {
+    //             printerInfo.printerModel = PrinterInfo.Model.QL_820NWB
+    //         } catch (e: IllegalArgumentException) {
+    //             promise.reject("MODEL_ERROR", "Invalid printer model: $modelName")
+    //             return
+    //         }
+
+    //         // Set WiFi connection
+    //         printerInfo.ipAddress = ipAddress
+    //         printerInfo.port = PrinterInfo.Port.NET
+    //         printer.printerInfo = printerInfo
+
+    //         // Get the correct file path
+    //         val actualFilePath = getValidFilePath(filePath)
+    //         if (actualFilePath == null) {
+    //             promise.reject("FILE_ERROR", "PDF file not found at path: $filePath")
+    //             return
+    //         }
+
+    //         // Start communication
+    //         if (!printer.startCommunication()) {
+    //             promise.reject("CONNECTION_ERROR", "Could not connect to printer at $ipAddress")
+    //             return
+    //         }
+
+    //         // Print the PDF
+    //         val result = printer.printPdfFile(actualFilePath, 1)
+    //         printer.endCommunication()
+
+    //         if (result.errorCode == PrinterInfo.ErrorCode.ERROR_NONE) {
+    //             promise.resolve("PDF printed successfully")
+    //         } else {
+    //             promise.reject("PRINT_ERROR", "PDF printing failed: ${result.errorCode}")
+    //         }
+
+    //     } catch (e: Exception) {
+    //         Log.e(TAG, "Exception in printPdf", e)
+    //         promise.reject("EXCEPTION", e.message ?: "Unknown error occurred in PDF printing")
+    //     }
+    // }
 
 // @ReactMethod
 // fun setLabelAutoCut(
@@ -478,13 +666,24 @@ class BrotherPrinterModule(reactContext: ReactApplicationContext) : ReactContext
 
     private fun getLabelSize(sizeString: String): QLPrintSettings.LabelSize {
         return when (sizeString.uppercase()) {
-            "ROLLW12" -> QLPrintSettings.LabelSize.RollW12
-            "ROLLW29" -> QLPrintSettings.LabelSize.RollW29
-            "ROLLW38" -> QLPrintSettings.LabelSize.RollW38
-            "ROLLW50" -> QLPrintSettings.LabelSize.RollW50
-            "ROLLW54" -> QLPrintSettings.LabelSize.RollW54
-            "ROLLW62" -> QLPrintSettings.LabelSize.RollW62
-            else -> QLPrintSettings.LabelSize.RollW62 // Default fallback
+            "DieCutW17H54" -> QLPrintSettings.LabelSize.DieCutW17H54
+            "DieCutW17H87" -> QLPrintSettings.LabelSize.DieCutW17H87
+            "DieCutW23H23" -> QLPrintSettings.LabelSize.DieCutW23H23
+            "DieCutW29H42" -> QLPrintSettings.LabelSize.DieCutW29H42
+            "DieCutW29H90" -> QLPrintSettings.LabelSize.DieCutW29H90
+            "DieCutW38H90" -> QLPrintSettings.LabelSize.DieCutW38H90
+            "DieCutW39H48" -> QLPrintSettings.LabelSize.DieCutW39H48
+            "DieCutW52H29" -> QLPrintSettings.LabelSize.DieCutW52H29
+            "DieCutW62H29" -> QLPrintSettings.LabelSize.DieCutW62H29
+            "DieCutW62H60" -> QLPrintSettings.LabelSize.DieCutW62H60
+            "DieCutW62H75" -> QLPrintSettings.LabelSize.DieCutW62H75
+            "DieCutW62H100" -> QLPrintSettings.LabelSize.DieCutW62H100
+            "DieCutW60H86" -> QLPrintSettings.LabelSize.DieCutW60H86
+            "DieCutW54H29" -> QLPrintSettings.LabelSize.DieCutW54H29
+            "DieCutW102H51" -> QLPrintSettings.LabelSize.DieCutW102H51
+            "DieCutW102H152" -> QLPrintSettings.LabelSize.DieCutW102H152
+            "DieCutW103H164" -> QLPrintSettings.LabelSize.DieCutW103H164
+            else -> QLPrintSettings.LabelSize.DieCutW29H90 // Default fallback
         }
     }
 }
