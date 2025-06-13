@@ -2,6 +2,7 @@ package com.awesomrbrother
 
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.content.pm.PackageManager
 import android.util.Log
@@ -17,6 +18,7 @@ import com.brother.ptouch.sdk.Printer
 import com.brother.ptouch.sdk.PrinterInfo
 import com.facebook.react.bridge.*
 import java.io.*
+import java.util.concurrent.Executors
 import androidx.core.content.ContextCompat
 import com.brother.sdk.lmprinter.PrinterDriver
 import com.brother.sdk.lmprinter.setting.PrintImageSettings
@@ -25,7 +27,11 @@ class BrotherPrinterModule(reactContext: ReactApplicationContext) : ReactContext
 
     companion object {
         private const val TAG = "BrotherPrinter"
+        private const val DISCOVERY_TIMEOUT = 10000L // 10 seconds
+        private const val CONNECTION_TIMEOUT = 5000 // 5 seconds
     }
+
+    private val executor = Executors.newCachedThreadPool()
 
     override fun getName(): String {
         return "BrotherPrinter"
@@ -405,7 +411,7 @@ class BrotherPrinterModule(reactContext: ReactApplicationContext) : ReactContext
 
             // Ensure proper alignment
 //            printSettings.halftone = QLPrintSettings.Halftone.Threshold
-            printSettings.hAlignment = PrintImageSettings.HorizontalAlignment.Center
+            // printSettings.hAlignment = PrintImageSettings.HorizontalAlignment.Center
 //            printSettings.vAlignment = QLPrintSettings.VAlignment.Middle
             // Or try: PrintImageSettings.ScaleMode.FitPaper
 
@@ -608,25 +614,25 @@ class BrotherPrinterModule(reactContext: ReactApplicationContext) : ReactContext
 
 
 
-    @ReactMethod
-    fun discoverPrinters(promise: Promise) {
-        try {
-            // This is a placeholder for printer discovery
-            // Brother SDK might have specific discovery methods depending on the version
-            val discoveredPrinters = WritableNativeArray()
+    // @ReactMethod
+    // fun discoverPrinters(promise: Promise) {
+    //     try {
+    //         // This is a placeholder for printer discovery
+    //         // Brother SDK might have specific discovery methods depending on the version
+    //         val discoveredPrinters = WritableNativeArray()
 
-            // Add sample discovered printer format
-            val samplePrinter = WritableNativeMap()
-            samplePrinter.putString("name", "Brother QL-820NWB")
-            samplePrinter.putString("ipAddress", "192.168.1.100")
-            samplePrinter.putString("macAddress", "00:80:77:XX:XX:XX")
+    //         // Add sample discovered printer format
+    //         val samplePrinter = WritableNativeMap()
+    //         samplePrinter.putString("name", "Brother QL-820NWB")
+    //         samplePrinter.putString("ipAddress", "192.168.1.100")
+    //         samplePrinter.putString("macAddress", "00:80:77:XX:XX:XX")
 
-            promise.resolve("Printer discovery not implemented. Use specific IP/MAC addresses.")
+    //         promise.resolve("Printer discovery not implemented. Use specific IP/MAC addresses.")
 
-        } catch (e: Exception) {
-            promise.reject("DISCOVERY_ERROR", e.message ?: "Failed to discover printers")
-        }
-    }
+    //     } catch (e: Exception) {
+    //         promise.reject("DISCOVERY_ERROR", e.message ?: "Failed to discover printers")
+    //     }
+    // }
 
     @ReactMethod
     fun checkPrinterStatus(ipAddress: String, promise: Promise) {
@@ -686,4 +692,173 @@ class BrotherPrinterModule(reactContext: ReactApplicationContext) : ReactContext
             else -> QLPrintSettings.LabelSize.DieCutW29H90 // Default fallback
         }
     }
+
+
+     @ReactMethod
+    fun searchBluetoothPrinters(promise: Promise) {
+        try {
+            // Check Bluetooth permissions
+            if (!hasBluetoothPermissions()) {
+                promise.reject("PERMISSION_ERROR", "Bluetooth permissions not granted")
+                return
+            }
+
+            val bluetoothManager = reactApplicationContext.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+            val bluetoothAdapter = bluetoothManager.adapter
+
+            if (bluetoothAdapter == null) {
+                promise.reject("BLUETOOTH_ERROR", "Bluetooth not supported on this device")
+                return
+            }
+
+            if (!bluetoothAdapter.isEnabled) {
+                promise.reject("BLUETOOTH_ERROR", "Bluetooth is not enabled")
+                return
+            }
+
+            val discoveredPrinters = WritableNativeArray()
+            val pairedDevices = bluetoothAdapter.bondedDevices
+
+            // Search through paired devices
+            for (device in pairedDevices) {
+                if (isBrotherPrinter(device)) {
+                    val printerInfo = WritableNativeMap()
+                    printerInfo.putString("name", device.name ?: "Unknown Brother Printer")
+                    printerInfo.putString("macAddress", device.address)
+                    printerInfo.putString("connectionType", "bluetooth")
+                    printerInfo.putString("status", "paired")
+                    discoveredPrinters.pushMap(printerInfo)
+                }
+            }
+
+            Log.d(TAG, "Found ${discoveredPrinters.size()} paired Brother printers")
+            promise.resolve(discoveredPrinters)
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error searching Bluetooth printers", e)
+            promise.reject("SEARCH_ERROR", e.message ?: "Failed to search Bluetooth printers")
+        }
+    }
+
+   @ReactMethod
+    fun connectToPrinter(
+        connectionType: String,
+        address: String,
+        promise: Promise
+    ) {
+        executor.execute {
+            try {
+                val channel = when (connectionType.lowercase()) {
+                    "bluetooth" -> {
+                        val bluetoothManager = reactApplicationContext.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+                        val bluetoothAdapter = bluetoothManager.adapter
+                        if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled) {
+                            promise.reject("BLUETOOTH_ERROR", "Bluetooth not available or not enabled")
+                            return@execute
+                        }
+                        Channel.newBluetoothChannel(address, bluetoothAdapter)
+                    }
+                    "wifi", "network" -> {
+                        Channel.newWifiChannel(address)
+                    }
+                    else -> {
+                        promise.reject("INVALID_TYPE", "Invalid connection type: $connectionType")
+                        return@execute
+                    }
+                }
+
+                val result = PrinterDriverGenerator.openChannel(channel)
+
+                if (result.error.code != OpenChannelError.ErrorCode.NoError) {
+                    Log.e(TAG, "Failed to connect to printer: ${result.error.code}")
+                    promise.reject("CONNECTION_ERROR", "Failed to connect to printer: ${result.error.code}")
+                    return@execute
+                }
+
+                Log.d(TAG, "Successfully connected to printer via $connectionType")
+                
+                // Get printer information
+                val printerDriver = result.driver
+                val connectionInfo = WritableNativeMap()
+                connectionInfo.putString("status", "connected")
+                connectionInfo.putString("connectionType", connectionType)
+                connectionInfo.putString("address", address)
+                connectionInfo.putString("message", "Successfully connected to printer")
+
+                // Close the test connection
+                printerDriver.closeChannel()
+                
+                promise.resolve(connectionInfo)
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Exception connecting to printer", e)
+                promise.reject("CONNECTION_EXCEPTION", e.message ?: "Unknown error occurred while connecting")
+            }
+        }
+    }
+
+    // Enhanced printer discovery with specific Brother printer detection
+    @ReactMethod
+    fun discoverPrinters(promise: Promise) {
+        executor.execute {
+            try {
+                val allPrinters = WritableNativeArray()
+
+                // Search Bluetooth printers
+                try {
+                    if (hasBluetoothPermissions()) {
+                        val bluetoothManager = reactApplicationContext.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+                        val bluetoothAdapter = bluetoothManager.adapter
+
+                        if (bluetoothAdapter?.isEnabled == true) {
+                            val pairedDevices = bluetoothAdapter.bondedDevices
+                            for (device in pairedDevices) {
+                                if (isBrotherPrinter(device)) {
+                                    val printerInfo = WritableNativeMap()
+                                    printerInfo.putString("name", device.name ?: "Brother Printer")
+                                    printerInfo.putString("macAddress", device.address)
+                                    printerInfo.putString("connectionType", "bluetooth")
+                                    printerInfo.putString("status", "paired")
+                                    allPrinters.pushMap(printerInfo)
+                                }
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Bluetooth search failed", e)
+                }
+
+              
+
+                Log.d(TAG, "Discovery completed. Found ${allPrinters.size()} printers total")
+                promise.resolve(allPrinters)
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Error in printer discovery", e)
+                promise.reject("DISCOVERY_ERROR", e.message ?: "Failed to discover printers")
+            }
+        }
+    }
+
+     private fun isBrotherPrinter(device: BluetoothDevice): Boolean {
+        val deviceName = device.name?.uppercase() ?: ""
+        return deviceName.contains("BROTHER") || 
+               deviceName.contains("QL-") ||
+               deviceName.contains("PT-") ||
+               deviceName.contains("TD-") ||
+               deviceName.contains("MW-") ||
+               deviceName.contains("RJ-")
+    }
+
+    // Helper methods
+    private fun hasBluetoothPermissions(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            ContextCompat.checkSelfPermission(reactApplicationContext, Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED &&
+            ContextCompat.checkSelfPermission(reactApplicationContext, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
+        } else {
+            ContextCompat.checkSelfPermission(reactApplicationContext, Manifest.permission.BLUETOOTH) == PackageManager.PERMISSION_GRANTED &&
+            ContextCompat.checkSelfPermission(reactApplicationContext, Manifest.permission.BLUETOOTH_ADMIN) == PackageManager.PERMISSION_GRANTED
+        }
+    }
+
 }

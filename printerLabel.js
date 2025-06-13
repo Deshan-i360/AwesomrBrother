@@ -212,24 +212,36 @@ function PrintLabel() {
   };
 
   const handlePrintLabel = async () => {
-    if (!imageUri) {
-      Alert.alert('Error', 'No image to print');
-      return;
-    }
+    // if (!imageUri) {
+    //   Alert.alert('Error', 'No image to print');
+    //   return;
+    // }
 
-    setIsGenerating(true);
     try {
-      // Here you would implement the actual printing logic
-      // For demonstration, we just log the image URI
-      await handlePrintImageBluetooth();
-      console.log('Printing image:', imageUri);
-      // Alert.alert('Success', 'Label sent to printer!');
+      const isConnected = await BrotherPrinter.connectToPrinter('bluetooth',
+        macAddress,
+      );
+      console.log('isConnected:', isConnected);
+      if (!isConnected) {
+        Alert.alert('Error', 'Printer is not connected');
+        return;
+      }
     } catch (error) {
-      console.error('Print error:', error);
-      Alert.alert('Error', 'Failed to print label');
-    } finally {
-      setIsGenerating(false);
+      
     }
+    // setIsGenerating(true);
+    // try {
+    //   // Here you would implement the actual printing logic
+    //   // For demonstration, we just log the image URI
+    //   await handlePrintImageBluetooth();
+    //   console.log('Printing image:', imageUri);
+    //   // Alert.alert('Success', 'Label sent to printer!');
+    // } catch (error) {
+    //   console.error('Print error:', error);
+    //   Alert.alert('Error', 'Failed to print label');
+    // } finally {
+    //   setIsGenerating(false);
+    // }
   };
 
   const handlePrintImageBluetooth = async () => {
@@ -318,13 +330,17 @@ function PrintLabel() {
   const printViaWifiPdf = async () => {
     try {
       // setIsGenerating(true);
-      const modelName = 'QL-820NWB';
-      const res = await BrotherPrinter.printPdfWifi(
-        ipAddress,
-        modelName,
-        isPdf,
-      );
-      console.log(res, '--------npm res');
+      // const modelName = 'QL-820NWB';
+      // const res = await BrotherPrinter.printPdfWifi(
+      //   ipAddress,
+      //   modelName,
+      //   isPdf,
+      // );
+
+      const res = await BrotherPrinter.discoverPrinters();
+      console.log(res, '--------discover res');
+      // console.log(res, '--------npm res');
+
 
       Alert.alert('Success', 'Image sent to printer via npm package');
       //  setIsGenerating(false);
@@ -424,7 +440,7 @@ function PrintLabel() {
           )}
         </View>
 
-        {/* {imageUri && (
+        {imageUri && (
           <TouchableOpacity
             style={[styles.printButton, isGenerating && styles.disabledButton]}
             onPress={handlePrintLabel}
@@ -433,10 +449,10 @@ function PrintLabel() {
             {isGenerating ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={styles.buttonText}>Print Image</Text>
+              <Text style={styles.buttonText}> connect to printer </Text>
             )}
           </TouchableOpacity>
-        )} */}
+        )}
 
         {/* {imageUri && (
           <TouchableOpacity
@@ -452,7 +468,7 @@ function PrintLabel() {
           </TouchableOpacity>
         )} */}
 
-        {/* {imageUri && (
+        {imageUri && (
           <TouchableOpacity
             style={[styles.printButton, isGenerating && styles.disabledButton]}
             onPress={printViaWifiPdf}
@@ -461,10 +477,10 @@ function PrintLabel() {
             {isGenerating ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={styles.buttonText}>Print via wifi pdf</Text>
+              <Text style={styles.buttonText}>discover printers</Text>
             )}
           </TouchableOpacity>
-        )} */}
+        )}
 
         {isPdf && (
           <TouchableOpacity

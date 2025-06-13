@@ -15,16 +15,17 @@ const parsedData = `<!DOCTYPE html>
       width: {{width}}px;
       height: {{height}}px;
       margin: 0;
-      margin-top: 30px;
+      margin-top: 90px;
+      margin-left: 30px;
       padding: 8px;
-      box-sizing: border-box;
-      border: 1px solid #000;
       background-color: white;
+      // box-sizing: border-box;
+      // border: 1px solid #000;
     }
     .label {
       display: flex;
       flex-direction: row;
-      margin-top: 0px;
+      margin-top: 10px;
       margin-left:30px;
       height: 100%;
       width: 100%;
@@ -32,12 +33,12 @@ const parsedData = `<!DOCTYPE html>
     }
     .qr {
       flex: 0 0 auto;
-      width: 35%; /* Adjust QR size to fit better */
+      width: 35%;
       height: 100%;
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 8px;
+      padding: 0px;
     }
     .qr img {
       width: 100%;
@@ -47,7 +48,7 @@ const parsedData = `<!DOCTYPE html>
       object-fit: contain;
     }
     .info {
-      flex: 1;
+      flex: 2;
       display: flex;
       flex-direction: column;
       justify-content: space-around;
@@ -56,10 +57,10 @@ const parsedData = `<!DOCTYPE html>
       overflow: hidden;
     }
     .field {
-      white-space: nowrap;
+      white-space: wrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      font-size: 54px; /* Smaller font for better fit */
+      font-size: 84px; /* Smaller font for better fit */
       line-height: 1.1;
       margin-bottom: 2px;
     }
@@ -99,7 +100,7 @@ const generatePDFFromHTML = async (data = {}) => {
     // Compile template with Handlebars
     const templateFunction = Handlebars.compile(parsedData);
     const generatedHtml = templateFunction({
-      organization: data.organization || 'Long Organization Name',
+      organization: data.organization || 'Long Organization Name fdkh hdkmjgwrw wrtr ayetdyhre r ',
       site: data.site || 'Site XYZ',
       visitor: data.visitor || 'John Doe',
       date: data.date || new Date().toLocaleDateString(),
@@ -108,7 +109,7 @@ const generatePDFFromHTML = async (data = {}) => {
       batchCode: data.batchCode || 'ABC-123',
       qrCode: qrCodeData,
       // CORRECTED DIMENSIONS for landscape orientation
-      width: 2126, // 90mm at 300 DPI (length)
+      width: 2598, // 90mm at 300 DPI (length)
       height: 684, // 29mm at 300 DPI (width)
     });
 
@@ -139,37 +140,37 @@ const generatePDFFromHTML = async (data = {}) => {
   }
 };
 
-// Function to save PDF to device storage
-const savePDFToDevice = async (pdfPath, fileName = 'label.pdf') => {
-  try {
-    let destinationPath;
+// // Function to save PDF to device storage
+// const savePDFToDevice = async (pdfPath, fileName = 'label.pdf') => {
+//   try {
+//     let destinationPath;
 
-    if (Platform.OS === 'android') {
-      // Request storage permission for Android
-      const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-      );
+//     if (Platform.OS === 'android') {
+//       // Request storage permission for Android
+//       const granted = await PermissionsAndroid.request(
+//         PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+//       );
 
-      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-        destinationPath = `${RNFS.DownloadDirectoryPath}/${fileName}`;
-      } else {
-        throw new Error('Storage permission denied');
-      }
-    } else {
-      // iOS - save to Documents directory
-      destinationPath = `${RNFS.DocumentDirectoryPath}/${fileName}`;
-    }
+//       if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+//         destinationPath = `${RNFS.DownloadDirectoryPath}/${fileName}`;
+//       } else {
+//         throw new Error('Storage permission denied');
+//       }
+//     } else {
+//       // iOS - save to Documents directory
+//       destinationPath = `${RNFS.DocumentDirectoryPath}/${fileName}`;
+//     }
 
-    // Copy PDF to destination
-    await RNFS.copyFile(pdfPath, destinationPath);
+//     // Copy PDF to destination
+//     await RNFS.copyFile(pdfPath, destinationPath);
 
-    console.log('PDF saved to:', destinationPath);
-    return destinationPath;
-  } catch (error) {
-    console.error('Error saving PDF:', error);
-    throw error;
-  }
-};
+//     console.log('PDF saved to:', destinationPath);
+//     return destinationPath;
+//   } catch (error) {
+//     console.error('Error saving PDF:', error);
+//     throw error;
+//   }
+// };
 
 // Function to share PDF
 // const sharePDF = async (pdfPath) => {
@@ -277,7 +278,7 @@ const handleGenerateBatchPDFs = () => {
 
 export {
   generatePDFFromHTML,
-  savePDFToDevice,
+  // savePDFToDevice,
   //   sharePDF,
   createLabelPDF,
   generateBatchPDFs,

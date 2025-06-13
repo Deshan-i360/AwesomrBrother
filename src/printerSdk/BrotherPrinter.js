@@ -151,6 +151,36 @@ class BrotherPrinterManager {
       throw error;
     }
   }
+
+  async discoverPrintersBluetooth() {
+    try {
+      const printers = await BrotherPrinter.discoverPrinters();
+      return printers;
+    } catch (error) {
+      console.error('BrotherPrinter Bluetooth Discovery Error:', error);
+      throw error;
+    }
+  }
+
+  async connectToPrinter(connectToPrinter,address) {
+    try {
+      const result = await BrotherPrinter.connectToPrinter(connectToPrinter,address);
+      return result;
+    } catch (error) {
+      console.error('BrotherPrinter Connect Error:', error);
+      throw error;
+    }
+  }
+
+
+
+
+
+
+
+
+
+
 }
 
 export default new BrotherPrinterManager();
